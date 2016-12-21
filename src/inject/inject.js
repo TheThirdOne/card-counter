@@ -1,18 +1,16 @@
-const TURN_NUMBER = 2;
+const EXTRA_COLUMNS = 2;
 
 chrome.extension.sendMessage({}, function(response) {
 	var readyStateCheckInterval = setInterval(function() {
 	if (document.readyState === "complete" && document.getElementById("game-leaderboard") !== null) {
 		clearInterval(readyStateCheckInterval);
-
 		init();
 		loopInterval = setInterval(loop, 100);
 	}
 	}, 100);
 });
 
-
-var loopInterval, turn;
+var loopInterval, turn, prevTurn;
 var prev = [];
 
 function init(){
@@ -27,21 +25,18 @@ function init(){
       row.children[5].textContent = "Land change";
       continue;
     }
-    for(let i = 0; i < TURN_NUMBER; i++){
+    for(let i = 0; i < EXTRA_COLUMNS; i++){
       row.appendChild(document.createElement('td'));
     }
   }
   prev.push(getScores());
-  turn = document.querySelector("#turn-counter").innerText;
-
 }
 
 function loop(){
-  currTurn = document.querySelector("#turn-counter").innerText.split(' ')[1];
-  if (turn === currTurn || currTurn < 2) {
+  turn = +document.querySelector("#turn-counter").innerText.split(' ')[1];
+  if (turn === prevTurn || turn < 2) {
     return;
   }
-  turn = currTurn;
 
   console.log('Card counting for turn ' + turn);
   var scores = getScores();
@@ -50,12 +45,15 @@ function loop(){
   var newColumns = new Map();
   for(let [color, {army, land}] of scores){
     let landChange = (prev.length > 5)?(land-prev[prev.length-5].get(color).land):1;
-    newColumns.set(color, [army-last.get(color).army,landChange]);
+    let armyChange = army-last.get(color).army;
+    newColumns.set(color, [armyChange,landChange]);
   }
+  prevTurn = turn;
   setExtraColumns(newColumns);
 }
 
-
+// Reads the scores from the scoreboard
+//  outputs a map from color to {army,land}
 function getScores(){
   var out = new Map();
   var rows = document.getElementById("game-leaderboard").children[0].children;
@@ -65,14 +63,15 @@ function getScores(){
       continue;
     }
     let color = row.children[1].className.split(' ')[1];
-    let army = +row.children[2].textContent;
+    let army = +row.children[2].textContent; // The + is used to convert to a number
     let land = +row.children[3].textContent;
     out.set(color,{army,land});
   }
   return out;
 }
 
-
+// Sets the additional columns
+//  Values is a map from color to [column 1, column 2, ...]
 function setExtraColumns(values){
   var rows = document.getElementById("game-leaderboard").children[0].children;
   for(let row of rows){
@@ -81,17 +80,12 @@ function setExtraColumns(values){
       continue;
     }
     let color = row.children[1].className.split(' ')[1];
-
-    row.children[4].textContent = values.get(color)[0];
-    row.children[5].textContent = values.get(color)[1];
+    for(let i = 0; i < EXTRA_COLUMNS; i++){
+      row.children[4+i].textContent = values.get(color)[i];
+    }
   }
 }
 
-
-
-
 function end(){
-
-
   clearInterval(loopInterval);
 }
