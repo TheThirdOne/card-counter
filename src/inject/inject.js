@@ -10,12 +10,13 @@ chrome.extension.sendMessage({}, function(response) {
 	}, 100);
 });
 
-var loopInterval, turn, prevTurn, cityEstimates;
+var loopInterval, turn, prevTurn, cityEstimates, previousArmyChanges;
 var prev = [];
 
 function init(){
   console.log('Initializing card counting');
   var rows = document.getElementById("game-leaderboard").children[0].children;
+  previousArmyChanges = new Map();
   cityEstimates = new Map();
   for(let row of rows){
     let name = row.children[1].textContent;
@@ -30,7 +31,8 @@ function init(){
       continue;
     }
     let color = row.children[1].className.split(' ')[1];
-    cityEstimates.set(color,[1,1,1,1,1,1,1,1,1]);
+    previousArmyChanges.set(color,[1,1,1,1,1]);
+    cityEstimates.set(color,1);
   }
   prev.push(getScores());
 }
@@ -46,20 +48,46 @@ function loop(){
   var last = prev[prev.length-1];
   prev.push(scores);
   var newColumns = new Map();
+  var temp = new Map();
   for(let [color, {army, land}] of scores){
     try{
-      let landChange = (prev.length > 5)?(land-prev[prev.length-5].get(color).land):1;
+      let landChange = land-last.get(color).land;
       let armyChange = army-last.get(color).army;
       if(turn%25 === 0){
         armyChange-=land;
       }
-      let previous = cityEstimates.get(color);
-      previous.pop();
-      previous.unshift(armyChange);
-      let cities= `${mode(previous)},${mean(previous)},${median(previous)}`;
-      newColumns.set(color, [armyChange,landChange,cities]);
+      temp.set(color,[armyChange,landChange]);
     }catch(e){
-      newColumns.set(color, [0,0]);
+      console.log(prev,last,e);
+    }
+  }
+      
+  for(let [color, [armyC, landC]] of temp){
+    try{
+      let raw = armyC;
+      if(landC !== 0){
+        for(let [color2, [armyC2, landC2]] of temp){
+          if(color === color2){
+            continue;
+          }
+          if(landC2 !== -landC){
+            continue;
+          }
+          if(Math.abs((armyC-cityEstimates.get(color))-(armyC2-cityEstimates.get(color2)) < 3)){
+            console.log(armyC-cityEstimates.get(color),armyC2-cityEstimates.get(color2), 'estimating that it has ', armyC-(armyC2-cityEstimates.get(color2)), 'production');
+            armyC = armyC-(armyC2-cityEstimates.get(color2));
+            break;
+          }
+        }
+      }
+      let previous = previousArmyChanges.get(color);
+      previous.pop();
+      previous.unshift(armyC);
+      let cities= mode(previous);
+      cityEstimates.set(color,mode(previous));
+      newColumns.set(color, [raw,landC,cities]);
+    }catch(e){
+      newColumns.set(color, [0,0,0]);
       console.log(prev,last,e);
     }
   }
