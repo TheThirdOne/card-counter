@@ -1,0 +1,22 @@
+{
+  "name": "Card Counter -- Generals.io",
+  "version": "0.0.1",
+  "manifest_version": 2,
+  "description": "A relatively simple extension to \"Card count\" how many cities opponents have in generals.io",
+  "homepage_url": "http://extensionizr.com",
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "http://generals.io/*"
+      ],
+      "js": [
+        "src/inject/inject.js"
+      ]
+    }
+  ]
+}
