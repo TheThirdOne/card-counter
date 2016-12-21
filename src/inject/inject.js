@@ -12,43 +12,71 @@ chrome.extension.sendMessage({}, function(response) {
 
 
 var loopInterval, turn;
-var prev = {};
+var prev = new Map();;
 
 function init(){
-  // ----------------------------------------------------------
-	// This part of the script triggers when page is done loading and the game starts
-	console.log("Hello. This message was sent from scripts/inject.js");
-	// ----------------------------------------------------------
-
-
+  var rows = document.getElementById("game-leaderboard").children[0].children;
+  for(let row of rows){
+    let name = row.children[1].textContent;
+    if(name === "Player"){
+      // code for top stuff
+      continue;
+    }
+    for(let i = 0; i < TURN_NUMBER; i++){
+      row.appendChild(document.createElement('td'));
+    }
+  }
+  prev = getScores();
+  
 }
 
 function loop(){
-  var rows = document.getElementById("game-leaderboard").children[0].children;
   if (turn === document.querySelector("#turn-counter").innerText) {
     return;
   }
   turn = document.querySelector("#turn-counter").innerText;
+  
+  var scores = getScores();
+  var newColumns = new Map();
+  for(let [color, {army, land}] of scores){
+    console.log(color,army,land);
+    newColumns.set(color, [army-prev.get(color).army]);
+  }
+  prev = scores;
+  setExtraColumns(newColumns);
+}
+
+
+function getScores(){
+  var out = new Map();
+  var rows = document.getElementById("game-leaderboard").children[0].children;
   for(let row of rows){
     let name = row.children[1].textContent;
     if(name === "Player"){
       continue;
     }
-    let army = +row.children[2].textContent;
     let color = row.children[1].className.split(' ')[1];
-    let prevArmy = prev[color] || 0;
+    let army = +row.children[2].textContent;
+    let land = +row.children[3].textContent;
+    out.set(color,{army,land});
+  }
+  return out;
+}
 
-    prev[color] = army;
 
-    td = document.createElement('td');
-    msg = document.createTextNode(army - prevArmy);
-    row.appendChild(td);
-    td.appendChild(msg);
-    if (row.children.length > 4 + TURN_NUMBER) {
-      row.removeChild(row.children[4]);
+function setExtraColumns(values){
+  var rows = document.getElementById("game-leaderboard").children[0].children;
+  for(let row of rows){
+    let name = row.children[1].textContent;
+    if(name === "Player"){
+      continue;
     }
+    let color = row.children[1].className.split(' ')[1];
+  
+    row.children[4].textContent = values.get(color)[0];
   }
 }
+
 
 
 
