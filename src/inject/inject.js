@@ -44,9 +44,17 @@ function loop(){
   prev.push(scores);
   var newColumns = new Map();
   for(let [color, {army, land}] of scores){
-    let landChange = (prev.length > 5)?(land-prev[prev.length-5].get(color).land):1;
-    let armyChange = army-last.get(color).army;
-    newColumns.set(color, [armyChange,landChange]);
+    try{
+      let landChange = (prev.length > 5)?(land-prev[prev.length-5].get(color).land):1;
+      let armyChange = army-last.get(color).army;
+      if(turn%25 === 0){
+        armyChange-=land;
+      }
+      newColumns.set(color, [armyChange,landChange]);
+    }catch(e){
+      newColumns.set(color, [0,0]);
+      console.log(prev,last,e);
+    }
   }
   prevTurn = turn;
   setExtraColumns(newColumns);
