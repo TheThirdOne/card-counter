@@ -1,4 +1,4 @@
-const TURN_NUMBER = 5;
+const TURN_NUMBER = 2;
 
 chrome.extension.sendMessage({}, function(response) {
 	var readyStateCheckInterval = setInterval(function() {
@@ -12,21 +12,24 @@ chrome.extension.sendMessage({}, function(response) {
 
 
 var loopInterval, turn;
-var prev = new Map();;
+var prev = [];
 
 function init(){
   var rows = document.getElementById("game-leaderboard").children[0].children;
   for(let row of rows){
     let name = row.children[1].textContent;
     if(name === "Player"){
-      // code for top stuff
+      row.appendChild(document.createElement('td'));
+      row.appendChild(document.createElement('td'));
+      //row.children[3].textContent = "Army change";
+      //row.children[4].textContent = "Land change";
       continue;
     }
     for(let i = 0; i < TURN_NUMBER; i++){
       row.appendChild(document.createElement('td'));
     }
   }
-  prev = getScores();
+  prev.push(getScores());
   
 }
 
@@ -37,12 +40,13 @@ function loop(){
   turn = document.querySelector("#turn-counter").innerText;
   
   var scores = getScores();
+  var last = prev[prev.length-1];
+  prev.push(scores);
   var newColumns = new Map();
   for(let [color, {army, land}] of scores){
-    console.log(color,army,land);
-    newColumns.set(color, [army-prev.get(color).army]);
+    let landChange = (prev.length > 5)?(land-prev[prev.length-5].get(color).land):1;
+    newColumns.set(color, [army-last.get(color).army,landChange]);
   }
-  prev = scores;
   setExtraColumns(newColumns);
 }
 
@@ -74,6 +78,7 @@ function setExtraColumns(values){
     let color = row.children[1].className.split(' ')[1];
   
     row.children[4].textContent = values.get(color)[0];
+    row.children[5].textContent = values.get(color)[1];
   }
 }
 
