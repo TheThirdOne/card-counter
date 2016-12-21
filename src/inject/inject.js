@@ -10,7 +10,7 @@ chrome.extension.sendMessage({}, function(response) {
 	}, 100);
 });
 
-var loopInterval, turn, prevTurn, cityEstimates, previousArmyChanges;
+var loopInterval, turn, prevTurn, cityEstimates, previousArmyChanges, knowns;
 var prev = [];
 
 function init(){
@@ -34,6 +34,7 @@ function init(){
     previousArmyChanges.set(color,[1,1,1,1,1]);
     cityEstimates.set(color,1);
   }
+  knowns = initMap();
   prev.push(getScores());
 }
 
@@ -42,8 +43,9 @@ function loop(){
   if (turn === prevTurn || turn < 2) {
     return;
   }
-
   console.log('Card counting for turn ' + turn);
+  
+  updateMap(knowns);
   var scores = getScores();
   var last = prev[prev.length-1];
   prev.push(scores);
@@ -152,4 +154,61 @@ function mean(arr){
 }
 function median(arr){
   return [...arr].sort((a,b)=>b-a)[5];
+}
+
+
+
+function initMap(){
+  var m = document.getElementById("map").children[0];
+  var height = m.children.length;
+  var width = m.children[0].children.length;
+  var knowns = [];
+  for(let row = 0; row < height; row++){
+    knowns[row] = [];
+    for(let col = 0; col < width; col++){
+      let cell = m.children[row].children[col];
+      knowns[row][col] = {fog:cell.className.indexOf('fog') !== -1, mountain:cell.className.indexOf('mountain') !== -1,
+                          city:cell.className.indexOf('city') !== -1, general:cell.className.indexOf('general') !== -1};
+    }
+  }
+  return knowns;
+}
+
+function updateMap(knowns){
+  var m = document.getElementById("map").children[0];
+  var height = m.children.length;
+  var width = m.children[0].children.length;
+  for(let row = 0; row < height; row++){
+    for(let col = 0; col < width; col++){
+      let cell = m.children[row].children[col];
+      let info = {fog:cell.className.indexOf('fog') !== -1, mountain:cell.className.indexOf('mountain') !== -1,
+                          city:cell.className.indexOf('city') !== -1, general:cell.className.indexOf('general') !== -1};
+
+      if(knowns[row][col].general && !info.general){
+        cell.className += ' general';
+      }
+      if(knowns[row][col].city && !info.city){
+        cell.className = cell.className.replace('obstacle','city');
+      }
+      if(knowns[row][col].mountain && !info.mountain){
+        cell.className = cell.className.replace('obstacle','mountain');
+      }
+      if(!knowns[row][col].fog && info.fog){
+        cell.className = cell.className.replace(/^fog/,'halffog');
+      }
+
+      if(!knowns[row][col].general && info.general){
+        knowns[row][col].general = true;
+      }
+      if(!knowns[row][col].city && info.city) {
+        knowns[row][col].city = true;
+      }
+      if(!knowns[row][col].mountain && info.mountain) {
+        knowns[row][col].mountain = true;
+      }
+      if(knowns[row][col].fog && !info.fog) {
+        knowns[row][col].fog = false;
+      }
+    }
+  }
 }
