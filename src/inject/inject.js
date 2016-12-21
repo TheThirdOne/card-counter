@@ -4,7 +4,7 @@ chrome.extension.sendMessage({}, function(response) {
 	var readyStateCheckInterval = setInterval(function() {
 	if (document.readyState === "complete" && document.getElementById("game-leaderboard") !== null) {
 		clearInterval(readyStateCheckInterval);
-		
+
 		init();
 		loopInterval = setInterval(loop, 100);
 	}
@@ -33,15 +33,16 @@ function init(){
   }
   prev.push(getScores());
   turn = document.querySelector("#turn-counter").innerText;
-  
+
 }
 
 function loop(){
-  if (turn === document.querySelector("#turn-counter").innerText) {
+  currTurn = document.querySelector("#turn-counter").innerText.split(' ')[1];
+  if (turn === currTurn || currTurn < 2) {
     return;
   }
-  turn = document.querySelector("#turn-counter").innerText;
-  
+  turn = currTurn;
+
   console.log('Card counting for turn ' + turn);
   var scores = getScores();
   var last = prev[prev.length-1];
@@ -80,7 +81,7 @@ function setExtraColumns(values){
       continue;
     }
     let color = row.children[1].className.split(' ')[1];
-  
+
     row.children[4].textContent = values.get(color)[0];
     row.children[5].textContent = values.get(color)[1];
   }
