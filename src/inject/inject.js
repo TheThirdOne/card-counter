@@ -8,7 +8,7 @@ chrome.extension.sendMessage({}, function(response) {
 		init();
 		loopInterval = setInterval(loop, 100);
 	}
-	}, 10);
+	}, 100);
 });
 
 
@@ -32,6 +32,7 @@ function init(){
     }
   }
   prev.push(getScores());
+  turn = document.querySelector("#turn-counter").innerText;
   
 }
 
