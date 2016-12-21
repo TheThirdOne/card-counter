@@ -1,4 +1,4 @@
-const EXTRA_COLUMNS = 2;
+const EXTRA_COLUMNS = 3;
 
 chrome.extension.sendMessage({}, function(response) {
 	var readyStateCheckInterval = setInterval(function() {
@@ -10,24 +10,27 @@ chrome.extension.sendMessage({}, function(response) {
 	}, 100);
 });
 
-var loopInterval, turn, prevTurn;
+var loopInterval, turn, prevTurn, cityEstimates;
 var prev = [];
 
 function init(){
   console.log('Initializing card counting');
   var rows = document.getElementById("game-leaderboard").children[0].children;
+  cityEstimates = new Map();
   for(let row of rows){
     let name = row.children[1].textContent;
-    if(name === "Player"){
-      row.appendChild(document.createElement('td'));
-      row.appendChild(document.createElement('td'));
-      row.children[4].textContent = "Army change";
-      row.children[5].textContent = "Land change";
-      continue;
-    }
+    
     for(let i = 0; i < EXTRA_COLUMNS; i++){
       row.appendChild(document.createElement('td'));
     }
+    if(name === "Player"){
+      row.children[4].textContent = "Army change";
+      row.children[5].textContent = "Land change";
+      row.children[6].textContent = "Cities?";
+      continue;
+    }
+    let color = row.children[1].className.split(' ')[1];
+    cityEstimates.set(color,[1,1,1,1,1,1,1,1,1]);
   }
   prev.push(getScores());
 }
@@ -50,7 +53,11 @@ function loop(){
       if(turn%25 === 0){
         armyChange-=land;
       }
-      newColumns.set(color, [armyChange,landChange]);
+      let previous = cityEstimates.get(color);
+      previous.pop();
+      previous.unshift(armyChange);
+      let cities= `${mode(previous)},${mean(previous)},${median(previous)}`;
+      newColumns.set(color, [armyChange,landChange,cities]);
     }catch(e){
       newColumns.set(color, [0,0]);
       console.log(prev,last,e);
@@ -96,4 +103,25 @@ function setExtraColumns(values){
 
 function end(){
   clearInterval(loopInterval);
+}
+
+function mode(arr){
+  var hist = {};
+  for(let i = 0; i < arr.length; i++){
+    hist[arr[i]] = (hist[arr[i]]||0)+1;
+  }
+  var max = hist[arr[0]], k = 0;
+  for(let i = 1; i < arr.length; i++){
+    if(hist[arr[i]] > max){
+      max = hist[arr[i]];
+      k = i;
+    }
+  }
+  return arr[k];
+}
+function mean(arr){
+  return ''+arr.reduce((a,b)=>a+b,0)+'/'+arr.length;
+}
+function median(arr){
+  return [...arr].sort((a,b)=>b-a)[5];
 }
