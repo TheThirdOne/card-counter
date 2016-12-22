@@ -168,7 +168,8 @@ function initMap(){
     for(let col = 0; col < width; col++){
       let cell = m.children[row].children[col];
       knowns[row][col] = {fog:cell.className.indexOf('fog') !== -1, mountain:cell.className.indexOf('mountain') !== -1,
-                          city:cell.className.indexOf('city') !== -1, general:cell.className.indexOf('general') !== -1};
+                          city:cell.className.indexOf('city') !== -1, general:cell.className.indexOf('general') !== -1,
+                          color:getColor(cell)};
     }
   }
   return knowns;
@@ -182,7 +183,8 @@ function updateMap(knowns){
     for(let col = 0; col < width; col++){
       let cell = m.children[row].children[col];
       let info = {fog:cell.className.indexOf('fog') !== -1, mountain:cell.className.indexOf('mountain') !== -1,
-                          city:cell.className.indexOf('city') !== -1, general:cell.className.indexOf('general') !== -1};
+                          city:cell.className.indexOf('city') !== -1, general:cell.className.indexOf('general') !== -1,
+                          color:getColor(cell)};
 
       if(knowns[row][col].general && !info.general){
         cell.className += ' general';
@@ -195,6 +197,9 @@ function updateMap(knowns){
       }
       if(!knowns[row][col].fog && info.fog){
         cell.className = cell.className.replace(/^fog/,'halffog');
+      }
+      if(info.color === '' && knowns[row][col].color){
+        cell.className += ' ' + knowns[row][col].color;
       }
 
       if(!knowns[row][col].general && info.general){
@@ -209,6 +214,14 @@ function updateMap(knowns){
       if(knowns[row][col].fog && !info.fog) {
         knowns[row][col].fog = false;
       }
+      if(info.color) {
+        knowns[row][col].color = info.color;
+      }
     }
   }
+}
+
+function getColor(cell){
+  var colors = ['red','green','blue','purple','teal','darkgreen','orange','brown','maroon'];
+  return (colors.filter(color=>cell.className.indexOf(color)!==-1)[0]||'');
 }
