@@ -1,16 +1,20 @@
 const EXTRA_COLUMNS = 3;
 
-chrome.extension.sendMessage({}, function(response) {
-	var readyStateCheckInterval = setInterval(function() {
+chrome.extension.sendMessage({}, start);
+function start(){
+  var readyStateCheckInterval = setInterval(function() {
 	if (document.readyState === "complete" && document.getElementById("game-leaderboard") !== null) {
-		clearInterval(readyStateCheckInterval);
-		init();
-		loopInterval = setInterval(loop, 100);
+  	clearInterval(readyStateCheckInterval);
+	  setTimeout(()=>{
+  		init();
+  		loopInterval = setInterval(loop, 100);
+  		endInterval = setInterval(end, 100);
+	  },100);
 	}
 	}, 100);
-});
+}
 
-var loopInterval, turn, prevTurn, cityEstimates, previousArmyChanges, knowns;
+var loopInterval, endInterval, turn, prevTurn, cityEstimates, previousArmyChanges, knowns;
 var prev = [];
 
 function init(){
@@ -132,7 +136,11 @@ function setExtraColumns(values){
 }
 
 function end(){
-  clearInterval(loopInterval);
+  if(document.getElementById("main-menu") !== null){
+    clearInterval(loopInterval);
+    clearInterval(endInterval);
+    setTimeout(start,100);
+  }
 }
 
 function mode(arr){
